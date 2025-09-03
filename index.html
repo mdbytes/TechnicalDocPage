@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="./css/site.css">
+</head>
+
+<body>
+  <nav id="navbar" class="sidenav">
+    <header>Asynchronous JavaScript</header>
+    <a class="nav-link" href="#Synchronous_JavaScript">Synchronous JavaScript</a>
+    <a class="nav-link" href="#Asynchronous_JavaScript">Asynchronous JavaScript</a>
+    <a class="nav-link" href="#Async_Callbacks">Async Callbacks</a>
+    <a class="nav-link" href="#Promises">Promises</a>
+    <a class="nav-link" href="#Conclusion">Conclusion</a>
+
+    <p id="ref-bottom">Source: <br>Asynchronous JavaScript<br><a
+        href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing">MDN Web
+        Docs</br></a></p>
+  </nav>
+
+  <main id="main-doc" class="main">
+    <h2>Asynchronous JavaScript</h2>
+
+    <section id="Synchronous_JavaScript" class="main-section">
+      <header>Synchronous JavaScript</header>
+      <p>To allow us to understand what asynchronous JavaScript is, we ought to start off by making sure we
+        understand what synchronous JavaScript is. This section recaps some of the information we saw in the
+        previous article.</p>
+      <p>A lot of the functionality we have looked at in previous learning area modules is synchronous — you run
+        some code, and the result is returned as soon as the browser can do so. Let's look at a simple example
+      </p>
+      <code>
+        const btn = document.querySelector('button');
+        btn.addEventListener('click', () => {
+        alert('You clicked me!');
+
+        let pElem = document.createElement('p');
+        pElem.textContent = 'This is a newly-added paragraph.';
+        document.body.appendChild(pElem);
+        });
+      </code>
+
+      <p>In this block, the lines are executed one after the other:</p>
+
+      <ol>
+        <li>We grab a reference to a &lt;button&gt; element that is already available in the
+          DOM.</li>
+        <li>We add a click event listener to it so that when the button is clicked:</li>
+        <li>An alert() message appears.</li>
+        <li>Once the alert is dismissed, we create a element.</li>
+        <li>We then give it some text content.</li>
+        <li>Finally, we append the paragraph to the document body.</li>
+      </ol>
+      While each operation is being processed, nothing else can happen — rendering is paused. This is because as
+      we said in the previous article, JavaScript is single threaded. Only one thing can happen at a time, on a
+      single main thread, and everything else is blocked until an operation completes.
+      </p>
+    </section>
+    <section id="Asynchronous_JavaScript" class="main-section">
+      <header>Asynchronous JavaScript</header>
+      <p>For reasons illustrated earlier (e.g. related to blocking), many Web API features now use asynchronous
+        code to run, especially those that access or fetch some kind of resource from an external device, such
+        as fetching a file from the network, accessing a database and returning data from it, accessing a video
+        stream from a web cam, or broadcasting the display to a VR headset.</p>
+      <p>Why is this difficult to get to work using synchronous code? Let's look at a quick example. When you
+        fetch an image from a server, you can't return the result immediately. That means that the following
+        (pseudocode) wouldn't work:</p>
+      <code>
+        let response = fetch('myImage.png'); // fetch is asynchronous
+        let blob = response.blob();
+        // display your image blob in the UI somehow
+      </code>
+
+      <p>That's because you don't know how long the image will take to download, so when you come to run the
+        second line it will throw an error (possibly intermittently, possibly every time) because the response
+        is not yet available. Instead, you need your code to wait until the response is returned before it tries
+        to do anything else to it.</p>
+      <p>There are two main types of asynchronous code style you'll come across in JavaScript code, old-style
+        callbacks and newer promise-style code. In the below sections we'll review each of these in turn.</p>
+
+    </section>
+    <section id="Async_Callbacks" class="main-section">
+      <header>Async Callbacks</header>
+
+      <p>Async callbacks are functions that are specified as arguments when calling a function which will start
+        executing code in the background. When the background code finishes running, it calls the callback
+        function to let you know the work is done, or to let you know that something of interest has happened.
+        Using callbacks is slightly old-fashioned now, but you'll still see them in use in a number of
+        older-but-still-commonly-used APIs.</p>
+      <p>An example of an async callback is the second parameter of the addEventListener() method (as we saw in
+        action above):</p>
+
+      <code>
+        btn.addEventListener('click', () => {
+        alert('You clicked me!');
+
+        let pElem = document.createElement('p');
+        pElem.textContent = 'This is a newly-added paragraph.';
+        document.body.appendChild(pElem);
+        });
+      </code>
+      <p>The first parameter is the type of event to be listened for, and the second parameter is a callback
+        function that is invoked when the event is fired.
+
+        When we pass a callback function as an argument to another function, we are only passing the function's
+        reference as an argument, i.e, the callback function is not executed immediately. It is “called back”
+        (hence the name) asynchronously somewhere inside the containing function’s body. The containing function
+        is responsible for executing the callback function when the time comes.
+
+        You can write your own function containing a callback easily enough. Let's look at another example that
+        loads a resource via the XMLHttpRequest API (run it live, and see the source):</p>
+
+      <code>
+        function loadAsset(url, type, callback) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.responseType = type;
+
+        xhr.onload = function() {
+        callback(xhr.response);
+        };
+
+        xhr.send();
+        }
+
+        function displayImage(blob) {
+        let objectURL = URL.createObjectURL(blob);
+
+        let image = document.createElement('img');
+        image.src = objectURL;
+        document.body.appendChild(image);
+        }
+
+        loadAsset('coffee.jpg', 'blob', displayImage);
+      </code>
+    </section>
+    <section id="Promises" class="main-section">
+      <header>Promises</header>
+      <p>Promises are the new style of async code that you'll see used in modern Web APIs. A good example is the
+        fetch() API, which is basically like a modern, more efficient version of XMLHttpRequest. Let's look at a
+        quick example, from our Fetching data from the server article:</p>
+
+      <code>
+        fetch('products.json').then(function(response) {
+        return response.json();
+        }).then(function(json) {
+        products = json;
+        initialize();
+        }).catch(function(err) {
+        console.log('Fetch problem: ' + err.message);
+        });
+      </code>
+
+      <p>Here we see fetch() taking a single parameter — the URL of a resource you want to fetch from the network
+        — and returning a promise. The promise is an object representing the completion or failure of the async
+        operation. It represents an intermediate state, as it were. In essence, it's the browser's way of saying
+        "I promise to get back to you with the answer as soon as I can," hence the name "promise."
+
+        This concept can take practice to get used to; it feels a little like Schrödinger's cat in action.
+        Neither of the possible outcomes have happened yet, so the fetch operation is currently waiting on the
+        result of the browser trying to complete the operation at some point in the future. We've then got three
+        further code blocks chained onto the end of the fetch():</p>
+
+      <ul>
+        <li>
+          Two then() blocks. Both contain a callback function that will run if the previous operation is
+          successful, and each callback receives as input the result of the previous successful operation, so
+          you can go forward and do something else to it. Each .then() block returns another promise, meaning
+          that you can chain multiple .then() blocks onto each other, so multiple asynchronous operations can
+          be made to run in order, one after another.
+        </li>
+        <li>
+          The catch() block at the end runs if any of the .then() blocks fail — in a similar way to
+          synchronous try...catch blocks, an error object is made available inside the catch(), which can be
+          used to report the kind of error that has occurred. Note however that synchronous try...catch won't
+          work with promises, although it will work with async/await, as you'll learn later on.
+        </li>
+      </ul>
+    </section>
+    <section id="Conclusion" class="main-section">
+      <header>Conclusion</header>
+
+      <p>
+        In its most basic form, JavaScript is a synchronous, blocking, single-threaded language, in which only
+        one operation can be in progress at a time. But web browsers define functions and APIs that allow us to
+        register functions that should not be executed synchronously, and should instead be invoked
+        asynchronously when some kind of event occurs (the passage of time, the user's interaction with the
+        mouse, or the arrival of data over the network, for example). This means that you can let your code do
+        several things at the same time without stopping or blocking your main thread.
+      </p>
+      <p>
+        Whether we want to run code synchronously or asynchronously will depend on what we're trying to do.
+      </p>
+      <p>
+        There are times when we want things to load and happen right away. For example when applying some
+        user-defined styles to a webpage you'll want the styles to be applied as soon as possible.
+      </p>
+      <p>
+        If we're running an operation that takes time however, like querying a database and using the results to
+        populate templates, it is better to push this off the main thread and complete the task asynchronously.
+        Over time, you'll learn when it makes more sense to choose an asynchronous technique over a synchronous
+        one.
+      </p>
+    </section>
+  </main>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js"
+    integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous">
+  </script>
+</body>
+
+</html>
